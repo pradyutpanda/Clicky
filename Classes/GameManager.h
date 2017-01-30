@@ -23,6 +23,8 @@ public:
     static GameManager* getInstance();
 
     void resetValues();
+    bool init();
+
     void startRound();
     void endRound();
     void wordFound();
@@ -30,11 +32,8 @@ public:
     void update(float dt);
     
     
-    static const std::string 	eventNameSetTimer;
-	static const std::string 	eventNameSetScore;
 
 private:
-	void dispatchCustomEvent(const std::string &eventName, void *eventData);
 
 	void startWordGuessTime();
 	void endWordGuessTimeRound();
@@ -42,6 +41,8 @@ private:
     static GameManager*         _sharedInstance;
 
     WordSet*                    _wordSet;
+    std::string                 _currentWord;   // word the player is trying to guess
+    std::string                 _guessWord;     // current guess
     
     int         _state;         // current state 
     float       _timer;			// track time taken for each word 

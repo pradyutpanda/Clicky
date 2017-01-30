@@ -14,6 +14,7 @@
 #include "WordTile.h"
 
 
+// manages all the word tiles and handles input
 class TileManager
 {
 public:
@@ -49,6 +50,7 @@ private:
 	void getClickedTile(cocos2d::Vec2 eventPosition);
 
     void updateTransition( float delta );
+    void dispatchCustomEvent(const std::string &eventName, void *eventData);
 
 
 	static TileManager*			_sharedInstance;
@@ -56,9 +58,9 @@ private:
     cocos2d::Layer* 			_drawLayer;
     std::vector<WordTile*> 		_letterTiles;
 
-    std::string 				_currentWord;	// word the player is trying to guess
-    std::string 				_guessWord;		// current guess
-    float						_clearGuessWordTimer;
+    //std::string 				_currentWord;	// word the player is trying to guess
+    //std::string 				_guessWord;		// current guess
+    
     int 						_gridNumCols;	// number of cols based on word length
     
     int                         _transitioning;  // transitioning in or out of a new word 

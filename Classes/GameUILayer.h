@@ -19,6 +19,8 @@ public:
     virtual bool init();
     
     void menuCloseCallback(Ref* pSender);
+    //void clearButtonTouchCallback(Ref* sender, cocos2d::ui::Widget::TouchEventType type);
+    void clearButtonClickCallback(Ref* sender);
     
     // implement the "static create()" method manually
     CREATE_FUNC(GameUILayer);

@@ -1,6 +1,6 @@
 //
 //  TileManager.cpp
-//  
+//  - Manages the rendering and animation for a list of tiles
 //
 //  Created by Pradyut Panda on 8/3/16.
 //
@@ -9,6 +9,7 @@
 #include "TileManager.h"
 #include "WordTile.h"
 #include "GameWorldScene.h"
+#include "EventDispatch.h"
 
 
 
@@ -33,13 +34,12 @@ bool TileManager::init(cocos2d::Layer *drawLayer)
         this->_drawLayer->addChild( tile, 0);
     }
 
-    _clearGuessWordTimer = 0.0f;
     _gridNumCols = 0;
 
     _angle = 0;
     _transitioning = 0;
     _transitionSpeed = 0.0f;
-    addMouseEventListener();
+    //addMouseEventListener();
     addTouchEventListener();
     return true;
 }
@@ -82,10 +82,9 @@ void TileManager::spawnNewWord(std::string& newWord, bool setTilePos = false)
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
     // get a new word 
-    _currentWord.assign(newWord);
-    int wordLength = (int)_currentWord.size();
+    int wordLength = (int)newWord.size();
     _gridNumCols = wordLength;
-    std::string currentWordLong = _currentWord;
+    std::string currentWordLong = newWord;
     getAdditionLetters(currentWordLong);
 
     // loop through and set the letters of the word 
@@ -95,7 +94,6 @@ void TileManager::spawnNewWord(std::string& newWord, bool setTilePos = false)
     }
     //placeLetters(_currentWord, wordLength);
     placeLettersLeftToRight(currentWordLong, wordLength, setTilePos);
-    _guessWord = "";
 }
 
  void TileManager::update( float delta )
@@ -103,13 +101,6 @@ void TileManager::spawnNewWord(std::string& newWord, bool setTilePos = false)
     for ( int i=0; i<_letterTiles.size(); i++ )
     {
         _letterTiles[i]->update(delta);
-    }
-
-    _clearGuessWordTimer -= delta;
-    if ( _clearGuessWordTimer < 0 ){
-        _clearGuessWordTimer = 0.0f;
-        _guessWord = "";
-        GameWorldScene::getGameUILayer()->setCurrentWordText(_guessWord);
     }
 
     updateTransition(delta);
@@ -322,12 +313,10 @@ void TileManager::addTouchEventListener()
     };
 
     listener1->onTouchMoved = [](Touch* touch, Event* event){
-        CCLOG(" on touch moved .... ");
         return true;
     };
 
     listener1->onTouchEnded = [](Touch* touch, Event* event){
-        CCLOG(" on touch ended .... ");
         return true;
     };
 
@@ -347,15 +336,9 @@ void TileManager::getClickedTile(Vec2 eventPosition)
         if (bbox.containsPoint(eventPosition))
         {
             char letter = _letterTiles[i]->getLetter();
-            _guessWord += letter;
-            GameWorldScene::getGameUILayer()->setCurrentWordText(_guessWord);
-            //CCLOG( "Letter is %c", letter );
-            _clearGuessWordTimer = CLEAR_WORD_TIMER;
-            if ( _currentWord.compare(_guessWord) == 0 )
-            {
-                GameManager::getInstance()->wordFound();
-            }
+            EventDispatch::dispatchCustomEvent( EventDispatch::eventNameAddLetter, &letter );
             break;
         }
     }
 }
+

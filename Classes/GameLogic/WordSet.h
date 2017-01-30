@@ -12,6 +12,9 @@
 #include <stdio.h>
 
 
+// represents a set of words that are related by some common theme 
+// populates from a file 
+// get a random word from the set without repeats
 class WordSet 
 {
 public:

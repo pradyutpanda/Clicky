@@ -11,12 +11,14 @@
 #include "TileManager.h"
 #include "WordSet.h"
 #include "WordSetManager.h"
+#include "EventDispatch.h"
+
 
 
 USING_NS_CC;
 
 
-const float     MAX_TIME_PER_ROUND = 2.0f;     // in seconds 
+const float     MAX_TIME_PER_ROUND = 20.0f;     // in seconds
 const int       SCORE_MULTIPLIER = 10;
 const int       MAX_WORDS_PER_ROUND = 20;
 const float     MAX_TIME_TRANSITION_WORD = 0.5f;    // in seconds 
@@ -25,8 +27,6 @@ const int       STATE_GUESS_WORD = 0;
 const int       STATE_TRANSITION_OUT_WORD = 1;
 
 
-const std::string GameManager::eventNameSetTimer = "EventNameSetTimer";
-const std::string GameManager::eventNameSetScore = "EventNameSetScore";
 GameManager* GameManager::_sharedInstance = NULL;
 
 
@@ -45,7 +45,7 @@ GameManager* GameManager::create()
         return _sharedInstance;
 
     GameManager *pRet = new(std::nothrow) GameManager();
-    if (pRet)
+    if (pRet && pRet->init())
     {
         _sharedInstance = pRet;
         //pRet->autorelease();
@@ -74,6 +74,34 @@ void GameManager::resetValues()
     _updateLabelTimer = 0.0f;
 }
 
+bool GameManager::init()
+{
+    auto dispatcher = Director::getInstance()->getEventDispatcher();
+
+     // callback for custom event for when a letter is added to the current guess word
+    auto callbackAddLetter = [this](EventCustom* event){ 
+        char letter = *((char *)event->getUserData());
+         _guessWord += letter;
+        EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetWord, &_guessWord);
+        if ( _currentWord.compare(_guessWord) == 0 )
+        {
+            this->wordFound();
+        }
+    };
+    auto listenerAddLetter = EventListenerCustom::create(EventDispatch::eventNameAddLetter, callbackAddLetter);
+    dispatcher->addEventListenerWithFixedPriority(listenerAddLetter, 1);  
+
+    // callback to clear the current guess
+    auto callbackClearWord = [this](EventCustom* event){ 
+        _guessWord = "";
+        EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetWord, &_guessWord);
+    };
+    auto listenerClearWord = EventListenerCustom::create(EventDispatch::eventNameClearWord, callbackClearWord);
+    dispatcher->addEventListenerWithFixedPriority(listenerClearWord, 1);  
+
+    return true;
+}
+
 
 // start a new round
 void GameManager::startRound()
@@ -86,10 +114,7 @@ void GameManager::startRound()
     _wordSet = WordSetManager::getInstance()->getActive();
     startWordGuessTime();
 
-    std::string word;
     _wordSet->initRound();
-    _wordSet->getNewWordFromSet(word);
-    TileManager::getInstance()->spawnNewWord(word, true);
 }
 
 
@@ -116,9 +141,12 @@ void GameManager::startWordGuessTime()
     std::string blank("---");
     GameWorldScene::getGameUILayer()->setCurrentWordText(blank);
 
-    std::string word;
-    _wordSet->getNewWordFromSet(word);
-    TileManager::getInstance()->spawnNewWord(word, true);
+    // clear the guess word 
+    _guessWord = "";
+    EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetWord, &_guessWord);
+
+    _wordSet->getNewWordFromSet(_currentWord);
+    TileManager::getInstance()->spawnNewWord(_currentWord, true);
     TileManager::getInstance()->transitionIn(MAX_TIME_TRANSITION_WORD);
 }
 
@@ -131,7 +159,7 @@ void GameManager::endWordGuessTimeRound()
     int scoreForWord = (int) (_timer * SCORE_MULTIPLIER);
     _score += scoreForWord;
 
-    dispatchCustomEvent(GameManager::eventNameSetScore, &_score);
+    EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetScore, &_score);
     TileManager::getInstance()->transitionOut(MAX_TIME_TRANSITION_WORD);
 
     _numWords++;
@@ -179,11 +207,3 @@ void GameManager::update(float dt)
         };
 }
 
-// contains the boiler plate code to send off a custon event 
-void GameManager::dispatchCustomEvent(const std::string &eventName, void *eventData)
-{
-    auto dispatcher = Director::getInstance()->getEventDispatcher();
-    EventCustom event(eventName);
-    event.setUserData(eventData);
-    dispatcher->dispatchEvent(&event);
-}
