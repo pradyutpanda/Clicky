@@ -18,7 +18,7 @@
 USING_NS_CC;
 
 
-const float     MAX_TIME_PER_ROUND = 20.0f;     // in seconds
+const float     MAX_TIME_PER_ROUND = 60.0f;     // in seconds
 const int       SCORE_MULTIPLIER = 10;
 const int       MAX_WORDS_PER_ROUND = 20;
 const float     MAX_TIME_TRANSITION_WORD = 0.5f;    // in seconds 
@@ -97,7 +97,17 @@ bool GameManager::init()
         EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetWord, &_guessWord);
     };
     auto listenerClearWord = EventListenerCustom::create(EventDispatch::eventNameClearWord, callbackClearWord);
-    dispatcher->addEventListenerWithFixedPriority(listenerClearWord, 1);  
+    dispatcher->addEventListenerWithFixedPriority(listenerClearWord, 1); 
+
+    // callback to go to the next word 
+    auto callbackNextWord = [this](EventCustom* event){
+        _timer = 0.0f;
+        this->endWordGuessTimeRound();
+    };
+    //EventDispatch::listenCustomEvent(EventDispatch::eventNameNextWord, callbackNextWord);
+    auto listenerNextWord = EventListenerCustom::create(EventDispatch::eventNameNextWord, callbackNextWord);
+    dispatcher->addEventListenerWithFixedPriority(listenerNextWord, 1); 
+
 
     return true;
 }
@@ -127,6 +137,8 @@ void GameManager::endRound()
 // player found the word, kill timer and give points
 void GameManager::wordFound()
 {
+    std::string feedbackStr = "Great Work!";
+    EventDispatch::dispatchCustomEvent(EventDispatch::eventNameShowPlayerFeedback, &feedbackStr);
     endWordGuessTimeRound();
 }
 
@@ -138,8 +150,6 @@ void GameManager::startWordGuessTime()
     _state = STATE_GUESS_WORD;
     _timer = MAX_TIME_PER_ROUND;
     _updateLabelTimer = 0.0;
-    std::string blank("---");
-    GameWorldScene::getGameUILayer()->setCurrentWordText(blank);
 
     // clear the guess word 
     _guessWord = "";
@@ -148,6 +158,10 @@ void GameManager::startWordGuessTime()
     _wordSet->getNewWordFromSet(_currentWord);
     TileManager::getInstance()->spawnNewWord(_currentWord, true);
     TileManager::getInstance()->transitionIn(MAX_TIME_TRANSITION_WORD);
+
+    // set the word index 
+    int numbers[]= { _numWords+1, MAX_WORDS_PER_ROUND};
+    EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetWordIndex, &numbers);
 }
 
 
@@ -155,7 +169,7 @@ void GameManager::endWordGuessTimeRound()
 {
     CCLOG( "Stop timer for word %d : ", _numWords );
 
-    // computer the score based on time remaining
+    // compute the score based on time remaining
     int scoreForWord = (int) (_timer * SCORE_MULTIPLIER);
     _score += scoreForWord;
 
@@ -194,7 +208,7 @@ void GameManager::update(float dt)
             if ( _updateLabelTimer > 0.1f )
             {
                 _updateLabelTimer = 0.0f;
-                GameWorldScene::getGameUILayer()->setTimerText(_timer);
+                EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetTimer, &_timer);
             }
             break;
             

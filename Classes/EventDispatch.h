@@ -19,13 +19,20 @@ class EventDispatch
 {
 public:
 
+	// events 
 	static const std::string eventNameSetTimer;
 	static const std::string eventNameSetScore;
 	static const std::string eventNameSetWord;
 	static const std::string eventNameAddLetter;
+	static const std::string eventNameSetWordIndex;
+	static const std::string eventNameShowPlayerFeedback;
+
 	static const std::string eventNameClearWord;
+	static const std::string eventNameNextWord;
 
 
+	// functions
+	static void listenCustomEvent(const std::string &eventName, std::function<void(cocos2d::EventCustom*)> callbackFunc);
     static void dispatchCustomEvent(const std::string &eventName, void *eventData);
 };
 

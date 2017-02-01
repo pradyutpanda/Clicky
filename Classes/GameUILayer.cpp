@@ -36,25 +36,38 @@ bool GameUILayer::init()
         float scoreValue = *((int *)event->getUserData());
         this->setScoreText(scoreValue);
     };
-    auto listenerScore = EventListenerCustom::create(EventDispatch::eventNameSetScore, callbackScore);
-    dispatcher->addEventListenerWithFixedPriority(listenerScore, 1);    
+    EventDispatch::listenCustomEvent(EventDispatch::eventNameSetScore, callbackScore);
+    
 
     // callback for custom event to set timer
     auto callbackTimer = [this](EventCustom* event){ 
         float timerValue = *((float *)event->getUserData());
         this->setTimerText(timerValue); 
     };
-    auto listenerTimer = EventListenerCustom::create(EventDispatch::eventNameSetTimer, callbackTimer);
-    dispatcher->addEventListenerWithFixedPriority(listenerTimer, 1);
+    EventDispatch::listenCustomEvent(EventDispatch::eventNameSetTimer, callbackTimer);
+
 
      // callback for custom event to set current guess word
     auto callbackWord = [this](EventCustom* event){ 
         std::string word = *((std::string *)event->getUserData());
         this->setCurrentWordText(word);
     };
-    auto listenerWord = EventListenerCustom::create(EventDispatch::eventNameSetWord, callbackWord);
-    dispatcher->addEventListenerWithFixedPriority(listenerWord, 1);
+    EventDispatch::listenCustomEvent(EventDispatch::eventNameSetWord, callbackWord);
     
+
+    // callback for custom event to set which word we are on
+    auto callbackSetWordIndex = [this](EventCustom* event){ 
+        int* numbers = ((int *)event->getUserData());
+        this->setWordIndexText(numbers[0], numbers[1]);
+    };
+    EventDispatch::listenCustomEvent(EventDispatch::eventNameSetWordIndex, callbackSetWordIndex);
+    
+
+    auto callbackShowPlayerFeedback = [this] (EventCustom* event) {
+        std::string word = *((std::string *)event->getUserData());
+        this->showPlayerFeedback(word);
+    };
+    EventDispatch::listenCustomEvent(EventDispatch::eventNameShowPlayerFeedback, callbackShowPlayerFeedback);
     
     return true;
 }
@@ -78,10 +91,16 @@ void GameUILayer::buildGameUI()
     this->addChild(menu, 1);
 
     // Label for the player score
-    _scoreLabel = Label::createWithTTF("Score : 0.0", "fonts/Marker Felt.ttf", 20);
+    _scoreLabel = Label::createWithTTF("Score : 0", "fonts/Marker Felt.ttf", 20);
     _scoreLabel->setPosition( Vec2(origin.x + visibleSize.width/5,
                                   origin.y + visibleSize.height - _scoreLabel->getContentSize().height));
     this->addChild(_scoreLabel, 1);
+
+    // Label for the which word in the round 
+    _wordIndexLabel = Label::createWithTTF("Word : ", "fonts/Marker Felt.ttf", 20);
+    _wordIndexLabel->setPosition( Vec2(origin.x + visibleSize.width/5,
+                                  origin.y + visibleSize.height*0.95 - _wordIndexLabel->getContentSize().height));
+    this->addChild(_wordIndexLabel, 1);
     
     // Label for the time left
     _timerLabel = Label::createWithTTF("Time : 0.0", "fonts/Marker Felt.ttf", 20);
@@ -95,13 +114,22 @@ void GameUILayer::buildGameUI()
                                  origin.y + visibleSize.height - _currentWordLabel->getContentSize().height));
     this->addChild(_currentWordLabel, 1);
 
+
+    /*auto createButton = [] (std::string title, int posX) -> cocos2d::ui::Button {
+        auto newButton = cocos2d::ui::Button::create("CloseNormal.png", "CloseSelected.png", "CloseSelected.png");
+
+        newButton->setTitleText(title);
+        newButton->setTitleFontSize(16);
+        newButton->setPosition(Vec2(posX,100));
+        return newButton;
+    };*/
     
     // Button to clean the current guess 
-    auto button = cocos2d::ui::Button::create("CloseNormal.png", "CloseSelected.png", "CloseSelected.png");
+    auto clearButton = cocos2d::ui::Button::create("CloseNormal.png", "CloseSelected.png", "CloseSelected.png");
 
-    button->setTitleText("[Clear     Guess]");
-    button->setTitleFontSize(16);
-    button->setPosition(Vec2(75,100));
+    clearButton->setTitleText("[Clear     Guess]");
+    clearButton->setTitleFontSize(16);
+    clearButton->setPosition(Vec2(75,100));
 
     auto clearButtonTouchCallback = [this] (Ref* sender, cocos2d::ui::Widget::TouchEventType type) {
         switch (type)
@@ -111,15 +139,47 @@ void GameUILayer::buildGameUI()
                 break;
         };
     };
-    button->addClickEventListener(CC_CALLBACK_1(GameUILayer::clearButtonClickCallback, this));
+    clearButton->addClickEventListener(CC_CALLBACK_1(GameUILayer::clearButtonClickCallback, this));
     //button->addTouchEventListener(CC_CALLBACK_2(GameUILayer::clearButtonClickCallback, this));
     //button->addTouchEventListener(clearButtonTouchCallback);
-    this->addChild(button);
-    
+    this->addChild(clearButton);
 
 
 
+    // Button to move to the next word 
+    auto nextButton = cocos2d::ui::Button::create("CloseNormal.png", "CloseSelected.png", "CloseSelected.png");
+
+    nextButton->setTitleText("[Next     Word]");
+    nextButton->setTitleFontSize(16);
+    nextButton->setPosition(Vec2(origin.x + visibleSize.width-100,100));
+    nextButton->addClickEventListener(CC_CALLBACK_1(GameUILayer::nextButtonClickCallback, this));
+    this->addChild(nextButton);
 }    
+
+
+void GameUILayer::showPlayerFeedback(std::string feedback)
+{
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    // Label for the player score
+    auto wordOKLabel = Label::createWithTTF(feedback, "fonts/Marker Felt.ttf", 30);
+    wordOKLabel->setPosition( Vec2(origin.x + visibleSize.width/2,
+                                  origin.y + 3*visibleSize.height/4) );
+    this->addChild(wordOKLabel, 1);
+
+    // Scale uniformly up and then down
+    auto scaleByUp = ScaleBy::create(0.5f, 3.0f);
+    auto scaleByDown = ScaleBy::create(0.25f, 0.33f);
+    auto callbackRemove = CallFunc::create([this, wordOKLabel](){
+        this->removeChild(wordOKLabel);
+        log("Removed!");
+    });
+
+    // create a sequence with the actions and callbacks
+    auto seq = Sequence::create(scaleByUp, scaleByDown, callbackRemove, nullptr);
+    wordOKLabel->runAction(seq);
+}
    
  
 void GameUILayer::setScoreText(int newScore)
@@ -128,6 +188,11 @@ void GameUILayer::setScoreText(int newScore)
     std::string scoreString = "Score: ";
     scoreString += std::to_string(newScore);
     _scoreLabel->setString(scoreString);
+
+    auto scaleByUp = ScaleBy::create(0.2f, 2.0f);
+    auto scaleByDown = ScaleBy::create(0.1f, 0.5f);
+    auto seq = Sequence::create(scaleByUp, scaleByDown, nullptr);
+    _scoreLabel->runAction(seq);
 }
 
 void GameUILayer::setTimerText(float newTimerValue )
@@ -141,6 +206,13 @@ void GameUILayer::setTimerText(float newTimerValue )
 void GameUILayer::setCurrentWordText(std::string& word )
 {
     _currentWordLabel->setString(word);
+}
+
+void GameUILayer::setWordIndexText(int index, int total )
+{
+    std::string wordIndexString = "Word: ";
+    wordIndexString += std::to_string(index) + "/" + std::to_string(total);
+    _wordIndexLabel->setString(wordIndexString);
 }
 
 
@@ -158,8 +230,12 @@ void GameUILayer::setCurrentWordText(std::string& word )
 // Callback functions live here
 void GameUILayer::clearButtonClickCallback(Ref* sender)
 {
-    CCLOG( "Clear Button 1 clicked");
     EventDispatch::dispatchCustomEvent(EventDispatch::eventNameClearWord, nullptr );
+}
+
+void GameUILayer::nextButtonClickCallback(Ref* sender)
+{
+    EventDispatch::dispatchCustomEvent(EventDispatch::eventNameNextWord, nullptr );
 }
 
 void GameUILayer::menuCloseCallback(Ref* pSender)

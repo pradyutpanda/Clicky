@@ -21,21 +21,25 @@ public:
     void menuCloseCallback(Ref* pSender);
     //void clearButtonTouchCallback(Ref* sender, cocos2d::ui::Widget::TouchEventType type);
     void clearButtonClickCallback(Ref* sender);
+    void nextButtonClickCallback(Ref* sender);
     
     // implement the "static create()" method manually
     CREATE_FUNC(GameUILayer);
 
-    void setScoreText(int newScore);
-	void setTimerText(float newTimerValue );
-	void setCurrentWordText(std::string& word );
 
 private:
 	void buildGameUI();
+	void showPlayerFeedback(std::string feedback);
 	
+	void setScoreText(int newScore);
+	void setTimerText(float newTimerValue );
+	void setCurrentWordText(std::string& word );
+	void setWordIndexText(int index, int total );
 
 	cocos2d::Label* 		_scoreLabel;
 	cocos2d::Label*			_timerLabel;
 	cocos2d::Label*			_currentWordLabel;
+	cocos2d::Label*			_wordIndexLabel;
 };
 
 

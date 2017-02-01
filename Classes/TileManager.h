@@ -58,8 +58,6 @@ private:
     cocos2d::Layer* 			_drawLayer;
     std::vector<WordTile*> 		_letterTiles;
 
-    //std::string 				_currentWord;	// word the player is trying to guess
-    //std::string 				_guessWord;		// current guess
     
     int 						_gridNumCols;	// number of cols based on word length
     
