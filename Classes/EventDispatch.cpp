@@ -25,6 +25,9 @@ const std::string EventDispatch::eventNameClearWord = "EventNameClearWord";
 const std::string EventDispatch::eventNameNextWord = "EventNameNextWord";
 
 
+const std::string EventDispatch::eventNamePlayEffect = "eventNamePlayEffect";
+
+
 
 // contains the boiler plate code to listen for a custom event
 void EventDispatch::listenCustomEvent(const std::string &eventName, std::function<void(cocos2d::EventCustom*)> callbackFunc)

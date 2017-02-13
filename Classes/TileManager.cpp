@@ -129,10 +129,13 @@ void TileManager::updateTransition( float delta )
         }    
     }
 
-    float scale = cos(_angle * 3.14f / 180.0f);
-    for ( int i=0; i<_letterTiles.size(); i++ )
+    if (_transitioning>0) 
     {
-        _letterTiles[i]->setScale(scale);
+        float scale = cos(_angle * 3.14f / 180.0f);
+        for ( int i=0; i<_letterTiles.size(); i++ )
+        {
+            _letterTiles[i]->setScale(scale);
+        }
     }
  }
 
@@ -337,6 +340,18 @@ void TileManager::getClickedTile(Vec2 eventPosition)
         {
             char letter = _letterTiles[i]->getLetter();
             EventDispatch::dispatchCustomEvent( EventDispatch::eventNameAddLetter, &letter );
+
+            // fades in and out the sprite 
+            //auto fadeOut = FadeOut::create(0.25f);
+            //auto fadeIn = FadeIn::create(0.25f);
+            //auto seq = Sequence::create(fadeOut, fadeIn, nullptr);
+
+
+            // Scale uniformly down and and then up
+            auto scaleByDown = ScaleBy::create(0.1f, 0.5f);
+            auto scaleByUp = ScaleBy::create(0.2f, 2.0f);
+            auto seq = Sequence::create(scaleByDown, scaleByUp, nullptr);
+            _letterTiles[i]->runAction(seq);
             break;
         }
     }

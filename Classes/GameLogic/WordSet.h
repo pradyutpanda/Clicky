@@ -30,6 +30,7 @@ private:
 
 	int 							_numWords;
 	std::vector<std::string>		_words; 
+	
 
 	int 	_pickedWordsFromSet[256];
 	int 	_numWordsPicked;

@@ -12,6 +12,8 @@
 #include "WordSet.h"
 #include "WordSetManager.h"
 #include "EventDispatch.h"
+#include "SimpleAudioEngine.h"
+#include "AudioManager.h"
 
 
 
@@ -80,6 +82,10 @@ bool GameManager::init()
 
      // callback for custom event for when a letter is added to the current guess word
     auto callbackAddLetter = [this](EventCustom* event){ 
+        // play a sound effect, just once.
+        auto audio = CocosDenshion::SimpleAudioEngine::getInstance();
+        audio->playEffect("touchEffect.mp3");
+
         char letter = *((char *)event->getUserData());
          _guessWord += letter;
         EventDispatch::dispatchCustomEvent(EventDispatch::eventNameSetWord, &_guessWord);
@@ -108,6 +114,7 @@ bool GameManager::init()
     auto listenerNextWord = EventListenerCustom::create(EventDispatch::eventNameNextWord, callbackNextWord);
     dispatcher->addEventListenerWithFixedPriority(listenerNextWord, 1); 
 
+    AudioManager::create();
 
     return true;
 }
@@ -125,11 +132,20 @@ void GameManager::startRound()
     startWordGuessTime();
 
     _wordSet->initRound();
+
+    // set the background music and continuously play it.
+    auto audio = CocosDenshion::SimpleAudioEngine::getInstance();
+    audio->playBackgroundMusic("backmusic.mp3", true);
 }
 
 
 void GameManager::endRound()
 {
+    // set the background music and continuously play it.
+    auto audio = CocosDenshion::SimpleAudioEngine::getInstance();
+    audio->stopBackgroundMusic(true);
+    
+
     CCLOG( "Ending a Round ! , total score : %d ", _score );
 }
 

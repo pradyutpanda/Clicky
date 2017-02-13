@@ -30,6 +30,8 @@ public:
 	static const std::string eventNameClearWord;
 	static const std::string eventNameNextWord;
 
+    static const std::string eventNamePlayEffect;
+    
 
 	// functions
 	static void listenCustomEvent(const std::string &eventName, std::function<void(cocos2d::EventCustom*)> callbackFunc);
